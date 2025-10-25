@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional, List
 import openai
 import os
@@ -119,6 +120,15 @@ class OpenAIService:
             return None
     
 app = FastAPI()
+
+# Allow CORS from the frontend during development. Adjust origins for production.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 
