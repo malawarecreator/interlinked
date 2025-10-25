@@ -153,6 +153,3 @@ async def get_ai_summary(id: str):
         raise HTTPException(status_code=404, detail="Failed to generate summary")
     return {"summary": summary}
 
-@app.on_event("shutdown")
-async def shutdown_event():
-    conn.close()
