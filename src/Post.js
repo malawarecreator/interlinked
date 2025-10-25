@@ -11,7 +11,7 @@ export default function Post({ post, onDelete }) {
   const date = new Date(createdAt);
 
   return (
-    <article className="post" style={{ border: '1px solid #ddd', padding: '0.75rem', marginBottom: '0.5rem', borderRadius: 6, backgroundColor: 'white'}}>
+    <article className="post" style={{ border: '1px solid #ddd', padding: '0.75rem', marginBottom: '0.5rem', borderRadius: 6, backgroundColor: 'lightgray'}}>
       {title ? (
         <h3 className="post-title" style={{ margin: 0, marginBottom: 6, fontSize: '1.05rem', fontWeight: 600 }}>{title}</h3>
       ) : null}
