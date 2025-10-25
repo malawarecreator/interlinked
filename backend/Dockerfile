@@ -9,8 +9,9 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
 # Install small set of system deps required to build wheels if needed.
-RUN apt-get update \
-	&& apt-get install -y --no-install-recommends gcc build-essential libffi-dev \
+# Use --fix-missing to tolerate transient repository problems and keep a small retry-friendly sequence.
+RUN apt-get update || (sleep 1 && apt-get update) \
+	&& apt-get install -y --no-install-recommends --fix-missing gcc build-essential libffi-dev \
 	&& rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install. The Docker build context should be the `backend/` folder
