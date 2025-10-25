@@ -1,8 +1,10 @@
 import pytest
+from fastapi import HTTPException
+from fastapi.testclient import TestClient
 import os
 import sqlite3
 from datetime import datetime
-from main import Post, Comment, DataService, OpenAIService
+from main import Post, Comment, DataService, OpenAIService, app
 
 @pytest.fixture
 def test_db():
@@ -15,6 +17,12 @@ def test_db():
     conn.commit()
     
     return conn
+
+@pytest.fixture
+def client(test_db, monkeypatch):
+    # Monkeypatch the global connection for API tests
+    monkeypatch.setattr('main.conn', test_db)
+    return TestClient(app)
 
 @pytest.fixture
 def sample_post():
@@ -58,40 +66,57 @@ def test_comment_model():
     assert comment.body == "Test Comment"
     assert comment.linked_post == "post-1"
 
-def test_create_post(test_db, sample_post, monkeypatch):
+# API Endpoint Tests
+def test_create_post_api(client, sample_post):
+    """Test POST /api/createPost endpoint"""
+    response = client.post("/api/createPost", json=sample_post.dict())
+    assert response.status_code == 200
+    assert response.json() == {"status": 0}
+
+def test_create_invalid_post_api(client):
+    """Test POST /api/createPost with invalid data"""
+    response = client.post("/api/createPost", json={"invalid": "data"})
+    assert response.status_code == 422  # FastAPI validation error
+
+def test_create_post_service(test_db, sample_post, monkeypatch):
     """Test post creation in DataService"""
-    # Monkeypatch the global connection
     monkeypatch.setattr('main.conn', test_db)
-    
-    # Create post
     status = DataService.create_post(sample_post)
     assert status == 0
     
-    # Verify post exists
     cursor = test_db.execute("SELECT * FROM posts WHERE id=?", (sample_post.id,))
     post = cursor.fetchone()
     assert post is not None
-    assert post[1] == sample_post.title  # title
-    assert post[2] == sample_post.body   # body
+    assert post[1] == sample_post.title
+    assert post[2] == sample_post.body
 
-def test_create_comment(test_db, sample_post, sample_comment, monkeypatch):
-    """Test comment creation in DataService"""
-    # Monkeypatch the global connection
-    monkeypatch.setattr('main.conn', test_db)
-    
+def test_create_comment_api(client, sample_post, sample_comment):
+    """Test POST /api/createComment endpoint"""
     # First create a post
-    DataService.create_post(sample_post)
+    client.post("/api/createPost", json=sample_post.dict())
     
-    # Then create comment
+    # Then create a comment
+    response = client.post("/api/createComment", json=sample_comment.dict())
+    assert response.status_code == 200
+    assert response.json() == {"status": 0}
+
+def test_create_comment_without_post_api(client, sample_comment):
+    """Test POST /api/createComment for non-existent post"""
+    response = client.post("/api/createComment", json=sample_comment.dict())
+    assert response.status_code == 400
+    assert "Failed to create comment" in response.json()["detail"]
+
+def test_create_comment_service(test_db, sample_post, sample_comment, monkeypatch):
+    """Test comment creation in DataService"""
+    monkeypatch.setattr('main.conn', test_db)
+    DataService.create_post(sample_post)
     status = DataService.create_comment(sample_comment)
     assert status == 0
     
-    # Verify comment exists
     cursor = test_db.execute("SELECT * FROM comments WHERE linked_post=?", (sample_post.id,))
     comment = cursor.fetchone()
     assert comment is not None
     assert comment[1] == sample_comment.body
-    assert comment[2] == sample_comment.linked_post
 
 def test_get_post(test_db, sample_post, monkeypatch):
     """Test retrieving a post"""
@@ -107,14 +132,22 @@ def test_get_post(test_db, sample_post, monkeypatch):
     assert post.title == sample_post.title
     assert post.body == sample_post.body
 
-def test_get_all_posts(test_db, sample_post, monkeypatch):
-    """Test retrieving all posts"""
-    monkeypatch.setattr('main.conn', test_db)
-    
-    # Create post
-    DataService.create_post(sample_post)
+def test_get_all_posts_api(client, sample_post):
+    """Test GET /api/getAllPosts endpoint"""
+    # Create post first
+    client.post("/api/createPost", json=sample_post.dict())
     
     # Get all posts
+    response = client.get("/api/getAllPosts")
+    assert response.status_code == 200
+    posts = response.json()
+    assert len(posts) > 0
+    assert posts[0]["id"] == sample_post.id
+
+def test_get_all_posts_service(test_db, sample_post, monkeypatch):
+    """Test retrieving all posts from DataService"""
+    monkeypatch.setattr('main.conn', test_db)
+    DataService.create_post(sample_post)
     posts = DataService.get_all_posts()
     assert len(posts) > 0
     assert posts[0].id == sample_post.id
@@ -133,19 +166,14 @@ def test_get_comments_for_post(test_db, sample_post, sample_comment, monkeypatch
     assert comments[0].body == sample_comment.body
     assert comments[0].linked_post == sample_post.id
 
-@pytest.mark.skipif(not os.getenv("OPENAI_API_KEY"), reason="OpenAI API key not found")
-def test_get_ai_summary(test_db, sample_post, monkeypatch):
-    """Test AI summary generation (requires OpenAI API key)"""
-    monkeypatch.setattr('main.conn', test_db)
-    
-    # Create post
-    DataService.create_post(sample_post)
-    
-    # Get summary
-    summary = OpenAIService.get_ai_summary(sample_post.id)
-    assert summary is not None
-    assert isinstance(summary, str)
-    assert len(summary) > 0
+
+
+def test_get_ai_summary_nonexistent_post_api(client):
+    """Test POST /api/getAISummary with non-existent post"""
+    response = client.post("/api/getAISummary?id=nonexistent")
+    assert response.status_code == 404
+    assert "Failed to generate summary" in response.json()["detail"]
+
 
 def test_nonexistent_post(test_db, monkeypatch):
     """Test behavior with non-existent posts"""

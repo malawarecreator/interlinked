@@ -89,6 +89,12 @@ class DataService:
             return None
         row = rows[0]
         return Post(created_at=row[0], title=row[1], body=row[2], id=row[3], likes=row[4])
+    @staticmethod
+    def like_post(id: str) -> int:
+        post = DataService.get_post(id)
+        if not post is None:
+            conn.execute("UPDATE posts SET likes=? WHERE id=?", (post.likes, id,))
+            conn.commit()
 
 class OpenAIService:
     @staticmethod
