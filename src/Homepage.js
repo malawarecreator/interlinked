@@ -201,30 +201,112 @@ export default function Homepage() {
   }
 
   return (
-    <div className="homepage" style={{ maxWidth: 800, margin: '0 auto', backgroundColor: 'lightblue' }}>
-      <div style={{fontFamily: "comic-sans"}}>
-        <h2>Interlinked</h2>
-        <h4>Connecting Millions of Communities Around the World</h4>
+    <div className="homepage" style={{
+      maxWidth: 900,
+      margin: '0 auto',
+      width: '100%'
+    }}>
+      <header style={{
+        textAlign: 'center',
+        marginBottom: '3rem',
+        padding: '2rem 1rem'
+      }}>
+        <h1 style={{
+          fontSize: 'clamp(2.5rem, 5vw, 3.5rem)',
+          fontWeight: 700,
+          margin: '0 0 0.5rem 0',
+          letterSpacing: '-0.02em'
+        }}>
+          <span className="gradient-text">Interlinked</span>
+        </h1>
+        <p style={{
+          fontSize: 'clamp(1rem, 2.5vw, 1.25rem)',
+          color: 'var(--text-secondary)',
+          fontWeight: 400,
+          margin: 0,
+          maxWidth: '600px',
+          margin: '0 auto',
+          lineHeight: 1.5
+        }}>
+          Connecting millions of communities around the world through anonymous sharing
+        </p>
+        <div style={{
+          width: '80px',
+          height: '4px',
+          background: 'var(--primary-gradient)',
+          borderRadius: '2px',
+          margin: '2rem auto 0'
+        }}></div>
+      </header>
+
+      <div className="card" style={{
+        padding: 'clamp(1rem, 4vw, 2rem)',
+        marginBottom: '2rem'
+      }}>
+        <h3 style={{
+          margin: '0 0 1.5rem 0',
+          fontSize: '1.5rem',
+          fontWeight: 600,
+          color: 'var(--text-primary)'
+        }}>
+          Share your thoughts
+        </h3>
+
+        <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div>
+            <input
+              className="input"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              placeholder="Give your post a title..."
+              style={{ marginBottom: '0.5rem' }}
+            />
+          </div>
+
+          <div>
+            <textarea
+              className="input textarea"
+              value={text}
+              onChange={e => setText(e.target.value)}
+              placeholder="Share something anonymously..."
+              rows={4}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+            <button type="button" className="btn btn-secondary" onClick={() => { setText(''); setTitle(''); }}>
+              Clear
+            </button>
+            <button type="submit" className="btn btn-primary">
+              📝 Post
+            </button>
+          </div>
+        </form>
       </div>
 
-      <form onSubmit={handleCreate} style={{ marginBottom: 16 }}>
-        <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Title..." style={{ width: '100%', padding: 8  , borderRadius: 6, border: '1px solid #ccc', boxSizing: 'border-box' }}/>
-        <textarea
-          value={text}
-          onChange={e => setText(e.target.value)}
-          placeholder="Share something anonymously..."
-          rows={4}
-          style={{ width: '100%', padding: 8  , borderRadius: 6, border: '1px solid #ccc', boxSizing: 'border-box' }}
-        />
-        <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
-          <button type="submit" style={{ padding: '8px 12px', borderRadius: 6, border: 'none', background: '#0366d6', color: '#fff', cursor: 'pointer' }}>Post</button>
-          <button type="button" onClick={() => setText('')} style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #ccc', background: '#fff', cursor: 'pointer' }}>Clear</button>
-        </div>
-      </form>
-
-      <section className="posts">
+      <section className="posts" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         {posts.length === 0 ? (
-          <p>No posts yet — be the first!</p>
+          <div className="card" style={{
+            padding: 'clamp(2rem, 8vw, 3rem)',
+            textAlign: 'center',
+            background: 'var(--bg-tertiary)',
+            border: '2px dashed var(--border-color)'
+          }}>
+            <div style={{
+              fontSize: 'clamp(2rem, 8vw, 3rem)',
+              marginBottom: '1rem'
+            }}>💭</div>
+            <h3 style={{
+              margin: '0 0 0.5rem 0',
+              color: 'var(--text-secondary)',
+              fontSize: 'clamp(1.25rem, 3vw, 1.5rem)'
+            }}>No posts yet</h3>
+            <p style={{
+              margin: 0,
+              color: 'var(--text-muted)',
+              fontSize: 'clamp(0.9rem, 2vw, 1rem)'
+            }}>Be the first to share your thoughts!</p>
+          </div>
         ) : (
           posts.map(p => <Post
             key={p.id}

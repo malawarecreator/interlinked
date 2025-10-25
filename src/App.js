@@ -4,8 +4,13 @@ import Homepage from './Homepage';
 
 function App() {
   return (
-    <div className="App" style={{ backgroundColor: 'lightblue' }}>
-      <main style={{ padding: '1rem' }}>
+    <div className="App">
+      <main style={{
+        padding: '2rem 1rem',
+        maxWidth: '1200px',
+        margin: '0 auto',
+        minHeight: '100vh'
+      }}>
         <Homepage />
       </main>
     </div>

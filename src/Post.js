@@ -98,69 +98,161 @@ export default function Post({ post, onLike, liking = false, liked = false, comm
   }
 
   return (
-    <article className="post" style={{
-      border: '1px solid #e5e7eb',
-      padding: '16px',
-      borderRadius: '8px',
-      backgroundColor: 'white',
+    <article className="card" style={{
+      padding: '1.5rem',
+      borderRadius: 'var(--border-radius)',
     }}>
-      {title ? (
-        <h3 style={{ margin: 0, marginBottom: 6, fontSize: '1.05rem', fontWeight: 600 }}>{title}</h3>
-      ) : null}
+      {title && (
+        <h3 style={{
+          margin: '0 0 1rem 0',
+          fontSize: '1.25rem',
+          fontWeight: 600,
+          color: 'var(--text-primary)',
+          lineHeight: 1.3
+        }}>
+          {title}
+        </h3>
+      )}
 
-      <div style={{ whiteSpace: 'pre-wrap', color: '#374151', marginBottom: 8 }}>{content}</div>
+      <div style={{
+        whiteSpace: 'pre-wrap',
+        color: 'var(--text-primary)',
+        marginBottom: '1.5rem',
+        lineHeight: 1.6,
+        fontSize: '1rem'
+      }}>
+        {content}
+      </div>
 
-      <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
-        <small style={{ color: '#666' }}>{isValidDate ? date.toLocaleString() : 'Unknown'}</small>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingTop: '1rem',
+        borderTop: '1px solid var(--border-color)',
+        gap: '1rem'
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          fontSize: '0.875rem',
+          color: 'var(--text-muted)'
+        }}>
+          <span>📅</span>
+          <span>{isValidDate ? relativeTime : 'Unknown'}</span>
+        </div>
+
+        <div className="post-actions" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
           <button
             onClick={() => onLike && onLike(id)}
             disabled={liking}
+            className={`btn ${liked ? 'btn-danger' : 'btn-success'}`}
             style={{
-              background: liked ? '#ef4444' : '#10b981',
-              color: '#fff',
-              border: 'none',
-              padding: '6px 8px',
-              borderRadius: 4,
-              cursor: liking ? 'not-allowed' : 'pointer',
-              opacity: liking ? 0.6 : 1,
-              transform: liked ? 'scale(1.02)' : 'none',
-              transition: 'transform 120ms ease, opacity 120ms ease',
+              padding: '8px 16px',
+              fontSize: '0.875rem',
+              minWidth: 'auto',
+              transform: liked ? 'scale(1.05)' : 'none',
+              transition: 'all 0.2s ease',
             }}
           >
-            {liking ? 'Liking…' : `Like (${likes})`}
+            {liking ? '⏳ Liking…' : `👍 Like (${likes})`}
           </button>
 
           <button
             onClick={() => setShowComments(s => !s)}
-            style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '6px 8px', borderRadius: 4, cursor: 'pointer' }}
+            className="btn btn-secondary"
+            style={{
+              padding: '8px 16px',
+              fontSize: '0.875rem',
+              minWidth: 'auto'
+            }}
           >
-            {showComments ? `Hide comments (${localComments.length})` : `Comments (${localComments.length})`}
+            💬 {showComments ? `Hide comments (${localComments.length})` : `Comments (${localComments.length})`}
           </button>
         </div>
       </div>
 
       {showComments && (
-        <div style={{ marginTop: 12 }}>
-          <form onSubmit={handleSubmitComment} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-            <input
-              value={commentText}
-              onChange={e => setCommentText(e.target.value)}
-              placeholder="Add a comment..."
-              style={{ flex: 1, padding: 8, borderRadius: 6, border: '1px solid #e5e7eb' }}
+        <div style={{
+          marginTop: '1.5rem',
+          paddingTop: '1.5rem',
+          borderTop: '1px solid var(--border-color)'
+        }}>
+          <form onSubmit={handleSubmitComment} className="comment-form" style={{
+            display: 'flex',
+            gap: '0.75rem',
+            marginBottom: '1.5rem',
+            alignItems: 'flex-end'
+          }}>
+            <div style={{ flex: 1 }}>
+              <input
+                className="input"
+                value={commentText}
+                onChange={e => setCommentText(e.target.value)}
+                placeholder="Add a comment..."
+                disabled={commenting}
+                style={{ marginBottom: 0 }}
+              />
+            </div>
+            <button
+              type="submit"
               disabled={commenting}
-            />
-            <button type="submit" disabled={commenting} style={{ padding: '8px 12px', borderRadius: 6, border: 'none', background: '#0366d6', color: '#fff' }}>{commenting ? 'Posting…' : 'Post'}</button>
+              className="btn btn-primary"
+              style={{
+                padding: '12px 20px',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {commenting ? '⏳ Posting…' : '💬 Post'}
+            </button>
           </form>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {localComments.length === 0 ? (
-              <div style={{ color: '#6b7280', fontSize: '0.9rem' }}>No comments yet</div>
+              <div style={{
+                textAlign: 'center',
+                padding: '2rem',
+                color: 'var(--text-muted)',
+                background: 'var(--bg-tertiary)',
+                borderRadius: 'var(--border-radius)',
+                border: '1px dashed var(--border-color)'
+              }}>
+                <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>💭</div>
+                <div>No comments yet</div>
+              </div>
             ) : (
               localComments.map((c, idx) => (
-                <div key={idx} style={{ padding: 8, background: '#f9fafb', borderRadius: 6, border: '1px solid #e5e7eb' }}>
-                  <div style={{ fontSize: '0.9rem', color: '#374151' }}>{c.body}</div>
-                  <small style={{ color: '#9ca3af' }}>{new Date(c.created_at).toLocaleString()}</small>
+                <div
+                  key={idx}
+                  style={{
+                    padding: '1rem',
+                    background: 'var(--bg-tertiary)',
+                    borderRadius: 'var(--border-radius)',
+                    border: '1px solid var(--border-color)',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => e.target.style.background = 'var(--bg-secondary)'}
+                  onMouseLeave={(e) => e.target.style.background = 'var(--bg-tertiary)'}
+                >
+                  <div style={{
+                    fontSize: '0.95rem',
+                    color: 'var(--text-primary)',
+                    marginBottom: '0.5rem',
+                    lineHeight: 1.5
+                  }}>
+                    {c.body}
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.8rem',
+                    color: 'var(--text-muted)'
+                  }}>
+                    <span>📅</span>
+                    <span>{new Date(c.created_at).toLocaleString()}</span>
+                  </div>
                 </div>
               ))
             )}
