@@ -98,77 +98,87 @@ export default function Post({ post, onLike, liking = false, liked = false, comm
   }
 
   return (
-    <article className="card" style={{
-      padding: '1.5rem',
-      borderRadius: 'var(--border-radius)',
-    }}>
+    <article className="post" style={{
+      border: '1px solid #e5e7eb',
+      padding: '20px',
+      borderRadius: '12px',
+      backgroundColor: 'white',
+      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+      transition: 'box-shadow 0.2s ease-in-out',
+    }}
+    onMouseOver={(e) => e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)'}
+    onMouseOut={(e) => e.target.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)'}
+    >
       {title && (
-        <h3 style={{
-          margin: '0 0 1rem 0',
-          fontSize: '1.25rem',
-          fontWeight: 600,
-          color: 'var(--text-primary)',
-          lineHeight: 1.3
+        <h3 className="post-title" style={{
+          margin: '0 0 12px 0',
+          fontSize: '1.125rem',
+          fontWeight: '600',
+          color: '#1f2937',
+          lineHeight: '1.4',
         }}>
           {title}
         </h3>
       )}
-
-      <div style={{
+      <div className="post-content" style={{
         whiteSpace: 'pre-wrap',
-        color: 'var(--text-primary)',
-        marginBottom: '1.5rem',
-        lineHeight: 1.6,
-        fontSize: '1rem'
+        color: '#374151',
+        lineHeight: '1.6',
+        marginBottom: '16px',
+        fontSize: '0.95rem',
       }}>
         {content}
       </div>
-
-      <div style={{
+      <div className="post-meta" style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingTop: '1rem',
-        borderTop: '1px solid var(--border-color)',
-        gap: '1rem'
+        paddingTop: '12px',
+        borderTop: '1px solid #f3f4f6',
       }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          fontSize: '0.875rem',
-          color: 'var(--text-muted)'
-        }}>
-          <span>📅</span>
-          <span>{isValidDate ? relativeTime : 'Unknown'}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            backgroundColor: '#10b981',
+          }}></div>
+          <small
+            style={{
+              color: '#6b7280',
+              fontSize: '0.75rem',
+              fontWeight: '500',
+            }}
+            title={isValidDate ? `${date.toLocaleDateString()} at ${date.toLocaleTimeString()}` : 'Unknown time'}
+          >
+            {relativeTime}
+          </small>
         </div>
 
-        <div className="post-actions" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <button
             onClick={() => onLike && onLike(id)}
             disabled={liking}
-            className={`btn ${liked ? 'btn-danger' : 'btn-success'}`}
             style={{
-              padding: '8px 16px',
-              fontSize: '0.875rem',
-              minWidth: 'auto',
-              transform: liked ? 'scale(1.05)' : 'none',
-              transition: 'all 0.2s ease',
+              background: liked ? '#ef4444' : '#10b981',
+              color: '#fff',
+              border: 'none',
+              padding: '6px 8px',
+              borderRadius: 4,
+              cursor: liking ? 'not-allowed' : 'pointer',
+              opacity: liking ? 0.6 : 1,
+              transform: liked ? 'scale(1.02)' : 'none',
+              transition: 'transform 120ms ease, opacity 120ms ease',
             }}
           >
-            {liking ? '⏳ Liking…' : `👍 Like (${likes})`}
+            {liking ? 'Liking…' : `Like (${likes})`}
           </button>
 
           <button
             onClick={() => setShowComments(s => !s)}
-            className="btn btn-secondary"
-            style={{
-              padding: '8px 16px',
-              fontSize: '0.875rem',
-              minWidth: 'auto'
-            }}
+            style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '6px 8px', borderRadius: 4, cursor: 'pointer' }}
           >
-            💬 {showComments ? `Hide comments (${localComments.length})` : `Comments (${localComments.length})`}
+            {showComments ? `Hide comments (${localComments.length})` : `Comments (${localComments.length})`}
           </button>
         </div>
       </div>

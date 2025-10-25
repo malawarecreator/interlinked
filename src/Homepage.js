@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Post from './Post';
+import AddPostModal from './AddPostModal';
+import FloatingActionButton from './FloatingActionButton';
 
 // Backend API base (change via env var if needed)
 const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:8000/api';
@@ -12,6 +14,32 @@ export default function Homepage() {
   const [likingIds, setLikingIds] = useState([]);
   const [likedIds, setLikedIds] = useState([]);
   const [commentsByPost, setCommentsByPost] = useState({});
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Mock alerts data - in a real app this would come from an API
+  const alerts = [
+    { id: 1, type: 'info', message: 'Welcome to Interlinked! Connect with your community anonymously.', time: '2 hours ago' },
+    { id: 2, type: 'success', message: `Your community now has ${posts.length} posts!`, time: '1 hour ago' },
+    { id: 3, type: 'warning', message: 'Remember to follow community guidelines when posting.', time: '30 min ago' },
+  ];
+
+  const getAlertIcon = (type) => {
+    switch (type) {
+      case 'success': return '✓';
+      case 'warning': return '⚠';
+      case 'info': return 'ℹ';
+      default: return '•';
+    }
+  };
+
+  const getAlertColor = (type) => {
+    switch (type) {
+      case 'success': return '#10b981';
+      case 'warning': return '#f59e0b';
+      case 'info': return '#3b82f6';
+      default: return '#6b7280';
+    }
+  };
 
   // Load posts from backend on mount. If backend is unreachable, fall back to localStorage.
   useEffect(() => {
@@ -75,14 +103,21 @@ export default function Homepage() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(posts)); } catch (err) { /* ignore */ }
   }, [posts]);
 
-  async function handleCreate(e) {
-    e && e.preventDefault();
-    const trimmed = text.trim();
+  async function handleCreate(eOrTitle, maybeContent) {
+    if (eOrTitle && typeof eOrTitle.preventDefault === 'function') {
+      eOrTitle.preventDefault();
+    }
+
+    const submittedTitle = typeof eOrTitle === 'string' ? eOrTitle : title;
+    const submittedContent = typeof eOrTitle === 'string' ? maybeContent : text;
+    const trimmed = (submittedContent ?? '').trim();
     if (!trimmed) return;
+
+    const sanitizedTitle = (submittedTitle ?? '').trim();
 
     const newPostPayload = {
       created_at: new Date().toISOString(),
-      title: title,
+      title: sanitizedTitle,
       body: trimmed,
       id: Date.now().toString(),
       likes: 0,
@@ -201,125 +236,170 @@ export default function Homepage() {
   }
 
   return (
-    <div className="homepage" style={{
-      maxWidth: 900,
-      margin: '0 auto',
-      width: '100%'
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: '#f8fafc',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     }}>
+      {/* Header */}
       <header style={{
-        textAlign: 'center',
-        marginBottom: '3rem',
-        padding: '2rem 1rem'
+        backgroundColor: 'white',
+        borderBottom: '1px solid #e5e7eb',
+        padding: '16px 24px',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
       }}>
-        <h1 style={{
-          fontSize: 'clamp(2.5rem, 5vw, 3.5rem)',
-          fontWeight: 700,
-          margin: '0 0 0.5rem 0',
-          letterSpacing: '-0.02em'
-        }}>
-          <span className="gradient-text">Interlinked</span>
-        </h1>
-        <p style={{
-          fontSize: 'clamp(1rem, 2.5vw, 1.25rem)',
-          color: 'var(--text-secondary)',
-          fontWeight: 400,
-          margin: 0,
-          maxWidth: '600px',
-          margin: '0 auto',
-          lineHeight: 1.5
-        }}>
-          Connecting millions of communities around the world through anonymous sharing
-        </p>
-        <div style={{
-          width: '80px',
-          height: '4px',
-          background: 'var(--primary-gradient)',
-          borderRadius: '2px',
-          margin: '2rem auto 0'
-        }}></div>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <h1 style={{
+            margin: 0,
+            color: '#1f2937',
+            fontSize: '1.875rem',
+            fontWeight: '700',
+          }}>
+            <span className="gradient-text">Interlinked</span> Dashboard
+          </h1>
+          <p style={{
+            margin: '4px 0 0 0',
+            color: '#6b7280',
+            fontSize: '0.875rem',
+          }}>
+            Connecting Communities Around the World
+          </p>
+        </div>
       </header>
 
-      <div className="card" style={{
-        padding: 'clamp(1rem, 4vw, 2rem)',
-        marginBottom: '2rem'
+      {/* Main Dashboard Layout */}
+      <div style={{
+        display: 'flex',
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '24px',
+        gap: '24px',
       }}>
-        <h3 style={{
-          margin: '0 0 1.5rem 0',
-          fontSize: '1.5rem',
-          fontWeight: 600,
-          color: 'var(--text-primary)'
+        {/* Sidebar - Alerts */}
+        <aside style={{
+          width: '320px',
+          flexShrink: 0,
         }}>
-          Share your thoughts
-        </h3>
-
-        <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div>
-            <input
-              className="input"
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-              placeholder="Give your post a title..."
-              style={{ marginBottom: '0.5rem' }}
-            />
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '20px',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+            border: '1px solid #e5e7eb',
+          }}>
+            <h3 style={{
+              margin: '0 0 16px 0',
+              fontSize: '1.125rem',
+              fontWeight: '600',
+              color: '#1f2937',
+            }}>
+              Community Alerts
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {alerts.map(alert => (
+                <div key={alert.id} style={{
+                  padding: '12px',
+                  borderRadius: '8px',
+                  backgroundColor: '#f9fafb',
+                  border: '1px solid #e5e7eb',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                    <span style={{
+                      color: getAlertColor(alert.type),
+                      fontSize: '1.125rem',
+                      lineHeight: '1',
+                    }}>
+                      {getAlertIcon(alert.type)}
+                    </span>
+                    <div style={{ flex: 1 }}>
+                      <p style={{
+                        margin: 0,
+                        fontSize: '0.875rem',
+                        color: '#374151',
+                        lineHeight: '1.4',
+                      }}>
+                        {alert.message}
+                      </p>
+                      <small style={{
+                        color: '#9ca3af',
+                        fontSize: '0.75rem',
+                      }}>
+                        {alert.time}
+                      </small>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
+        </aside>
 
-          <div>
-            <textarea
-              className="input textarea"
-              value={text}
-              onChange={e => setText(e.target.value)}
-              placeholder="Share something anonymously..."
-              rows={4}
-            />
-          </div>
+        {/* Main Content - Posts */}
+        <main style={{ flex: 1 }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '24px',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+            border: '1px solid #e5e7eb',
+          }}>
+            <div style={{ marginBottom: '20px' }}>
+              <h2 style={{
+                margin: '0 0 8px 0',
+                fontSize: '1.25rem',
+                fontWeight: '600',
+                color: '#1f2937',
+              }}>
+                Community Posts
+              </h2>
+              <p style={{
+                margin: 0,
+                color: '#6b7280',
+                fontSize: '0.875rem',
+              }}>
+                {posts.length} {posts.length === 1 ? 'post' : 'posts'} shared anonymously
+              </p>
+            </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
-            <button type="button" className="btn btn-secondary" onClick={() => { setText(''); setTitle(''); }}>
-              Clear
-            </button>
-            <button type="submit" className="btn btn-primary">
-              📝 Post
-            </button>
+            <section className="posts">
+              {posts.length === 0 ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '48px 24px',
+                  color: '#6b7280',
+                }}>
+                  <div style={{ fontSize: '3rem', marginBottom: '16px' }}>📝</div>
+                  <h3 style={{ margin: '0 0 8px 0', color: '#374151' }}>No posts yet</h3>
+                  <p style={{ margin: 0 }}>Be the first to share something with your community!</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {posts.map(p => <Post
+                    key={p.id}
+                    post={p}
+                    onLike={handleLike}
+                    liking={likingIds.includes(p.id)}
+                    liked={likedIds.includes(p.id)}
+                    onLoadComments={loadCommentsForPost}
+                    onSubmitComment={submitCommentOnPost}
+                    comments={commentsByPost[p.id] || []}
+                  />)}
+                </div>
+              )}
+            </section>
           </div>
-        </form>
+        </main>
       </div>
 
-      <section className="posts" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-        {posts.length === 0 ? (
-          <div className="card" style={{
-            padding: 'clamp(2rem, 8vw, 3rem)',
-            textAlign: 'center',
-            background: 'var(--bg-tertiary)',
-            border: '2px dashed var(--border-color)'
-          }}>
-            <div style={{
-              fontSize: 'clamp(2rem, 8vw, 3rem)',
-              marginBottom: '1rem'
-            }}>💭</div>
-            <h3 style={{
-              margin: '0 0 0.5rem 0',
-              color: 'var(--text-secondary)',
-              fontSize: 'clamp(1.25rem, 3vw, 1.5rem)'
-            }}>No posts yet</h3>
-            <p style={{
-              margin: 0,
-              color: 'var(--text-muted)',
-              fontSize: 'clamp(0.9rem, 2vw, 1rem)'
-            }}>Be the first to share your thoughts!</p>
-          </div>
-        ) : (
-          posts.map(p => <Post
-            key={p.id}
-            post={p}
-            onLike={handleLike}
-            liking={likingIds.includes(p.id)}
-            liked={likedIds.includes(p.id)}
-            onLoadComments={loadCommentsForPost}
-            onSubmitComment={submitCommentOnPost}
-            comments={commentsByPost[p.id] || []}
-          />)
-        )}
-      </section>
+      {/* Floating Action Button */}
+      <FloatingActionButton onClick={() => setIsModalOpen(true)} />
+
+      {/* Modal */}
+      <AddPostModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={(modalTitle, modalContent) => handleCreate(modalTitle, modalContent)}
+      />
     </div>
   );
 }
