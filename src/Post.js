@@ -1,11 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-/**
- * Post - Presentational component for a single post
- * props:
- *  - post: { id, content|body, createdAt|created_at, title, likes }
- *  - onLike: optional function(id)
- */
+
 export default function Post({ post, onLike, liking = false, liked = false, comments = [], onLoadComments, onSubmitComment }) {
   const title = post.title;
   const id = post.id;
@@ -13,7 +8,6 @@ export default function Post({ post, onLike, liking = false, liked = false, comm
   const rawTimestamp = post.createdAt ?? post.created_at;
   const likes = post.likes ?? 0;
 
-  // Normalize timestamp to Date
   const getValidDate = (timestamp) => {
     if (!timestamp) return new Date();
     if (typeof timestamp === 'string') {
@@ -47,7 +41,6 @@ export default function Post({ post, onLike, liking = false, liked = false, comm
 
   const relativeTime = getRelativeTime(date);
 
-  // Comments UI (can be driven by parent via props + handlers)
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [commenting, setCommenting] = useState(false);
@@ -60,7 +53,6 @@ export default function Post({ post, onLike, liking = false, liked = false, comm
   }, [comments]);
 
   useEffect(() => {
-    // If comments panel opened and parent provided onLoadComments, ask parent to load and use returned value
     if (showComments && onLoadComments) {
       // call and use returned array to populate immediately
       onLoadComments(id).then(result => {
