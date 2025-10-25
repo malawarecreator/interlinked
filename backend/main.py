@@ -81,7 +81,15 @@ class DataService:
         for row in rows:
             comments.append(Comment(created_at=row[0], body=row[1], linked_post=row[2]))
         return comments
-    
+    @staticmethod
+    def get_post(id: str) -> Post:
+        rows = conn.execute("SELECT * FROM posts WHERE id=?", (id,)).fetchall()
+        if len(rows) <= 0:
+            return None
+        row = rows[0]
+        return Post(created_at=row[0], title=row[1], body=row[2], id=row[3], likes=row[4])
+
+
     
 app = FastAPI()
 
@@ -110,6 +118,15 @@ async def create_comment(comment: Comment):
 async def get_all_posts():
     posts = DataService.get_all_posts()
     return posts
+@app.get("/api/getPost")
+async def get_post(id: str):
+    post = DataService.get_post(id)
+    if post == None:
+        return "Not found"
+    else:
+        return post
+
+    
 @app.get("/api/getCommentsForPost")
 async def get_comments_for_post(linked_post: str):
     comments = DataService.get_comments_for_post(linked_post)
