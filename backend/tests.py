@@ -188,3 +188,55 @@ def test_create_comment_without_post(test_db, sample_comment, monkeypatch):
     
     status = DataService.create_comment(sample_comment)
     assert status == -1  # Should fail because post doesn't exist
+
+def test_like_post_service(test_db, sample_post, monkeypatch):
+    """Test liking a post"""
+    monkeypatch.setattr('main.conn', test_db)
+    
+    # Create post first
+    DataService.create_post(sample_post)
+    
+    # Like the post
+    status = DataService.like_post(sample_post.id)
+    assert status == 0
+    
+    # Verify likes increased
+    post = DataService.get_post(sample_post.id)
+    assert post is not None
+    assert post.likes == 1
+    
+    # Like again
+    status = DataService.like_post(sample_post.id)
+    assert status == 0
+    
+    # Verify likes increased again
+    post = DataService.get_post(sample_post.id)
+    assert post.likes == 2
+
+def test_like_nonexistent_post_service(test_db, monkeypatch):
+    """Test liking a nonexistent post"""
+    monkeypatch.setattr('main.conn', test_db)
+    
+    status = DataService.like_post("nonexistent-id")
+    assert status == -1
+
+def test_like_post_api(client, sample_post):
+    """Test POST /api/like endpoint"""
+    # Create post first
+    client.post("/api/createPost", json=sample_post.dict())
+    
+    # Like the post
+    response = client.post(f"/api/like?id={sample_post.id}")
+    assert response.status_code == 200
+    assert response.json() == {"status": 0}
+    
+    # Verify likes increased
+    response = client.get(f"/api/getPost?id={sample_post.id}")
+    assert response.status_code == 200
+    assert response.json()["likes"] == 1
+
+def test_like_nonexistent_post_api(client):
+    """Test POST /api/like with non-existent post"""
+    response = client.post("/api/like?id=nonexistent")
+    assert response.status_code == 400
+    assert "Failed to like post" in response.json()["detail"]

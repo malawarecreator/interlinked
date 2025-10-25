@@ -93,8 +93,11 @@ class DataService:
     def like_post(id: str) -> int:
         post = DataService.get_post(id)
         if not post is None:
-            conn.execute("UPDATE posts SET likes=? WHERE id=?", (post.likes, id,))
+            new_likes = post.likes + 1
+            conn.execute("UPDATE posts SET likes=? WHERE id=?", (new_likes, id,))
             conn.commit()
+            return 0
+        return -1
 
 class OpenAIService:
     @staticmethod
@@ -158,4 +161,9 @@ async def get_ai_summary(id: str):
     if summary is None:
         raise HTTPException(status_code=404, detail="Failed to generate summary")
     return {"summary": summary}
-
+@app.post("/api/like")
+async def like_post(id: str):
+    status = DataService.like_post(id)
+    if status < 0:
+        raise HTTPException(status_code=400, detail="Failed to like post")
+    return {"status": status}
