@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from typing import Optional, List
 import openai
 import os
 import sqlite3
@@ -82,14 +83,31 @@ class DataService:
             comments.append(Comment(created_at=row[0], body=row[1], linked_post=row[2]))
         return comments
     @staticmethod
-    def get_post(id: str) -> Post:
+    def get_post(id: str) -> Optional[Post]:
         rows = conn.execute("SELECT * FROM posts WHERE id=?", (id,)).fetchall()
-        if len(rows) <= 0:
+        if not rows:
             return None
         row = rows[0]
         return Post(created_at=row[0], title=row[1], body=row[2], id=row[3], likes=row[4])
 
-
+class OpenAIService:
+    @staticmethod
+    def get_ai_summary(id: str) -> Optional[str]:
+        post = DataService.get_post(id=id)
+        if post is None:
+            return None
+        try:
+            res = openai.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant who helps summarize posts"},
+                    {"role": "user", "content": f"title: {post.title} body: {post.body} | WRITE A SMALL 2 SENTENCE SUMMARY"}
+                ]
+            )
+            return res.choices[0].message.content
+        except Exception as e:
+            print(f"OpenAIService: Failed to get AI summary; {e}")
+            return None
     
 app = FastAPI()
 
@@ -103,34 +121,37 @@ async def apiRoot():
 async def create_post(post: Post):
     status = DataService.create_post(post)
     if status < 0:
-        return "error"
-    else:
-        return {"status": status}
+        raise HTTPException(status_code=400, detail="Failed to create post")
+    return {"status": status}
 
 @app.post("/api/createComment")
 async def create_comment(comment: Comment):
     status = DataService.create_comment(comment)
     if status < 0:
-        return "error"
-    else:
-        return {"status": status}
-@app.get("/api/getAllPosts")
+        raise HTTPException(status_code=400, detail="Failed to create comment")
+    return {"status": status}
+
+@app.get("/api/getAllPosts", response_model=List[Post])
 async def get_all_posts():
-    posts = DataService.get_all_posts()
-    return posts
-@app.get("/api/getPost")
+    return DataService.get_all_posts()
+
+@app.get("/api/getPost", response_model=Post)
 async def get_post(id: str):
     post = DataService.get_post(id)
-    if post == None:
-        return "Not found"
-    else:
-        return post
+    if post is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+    return post
 
-    
-@app.get("/api/getCommentsForPost")
+@app.get("/api/getCommentsForPost", response_model=List[Comment])
 async def get_comments_for_post(linked_post: str):
-    comments = DataService.get_comments_for_post(linked_post)
-    return comments
+    return DataService.get_comments_for_post(linked_post)
+
+@app.post("/api/getAISummary")
+async def get_ai_summary(id: str):
+    summary = OpenAIService.get_ai_summary(id)
+    if summary is None:
+        raise HTTPException(status_code=404, detail="Failed to generate summary")
+    return {"summary": summary}
 
 @app.on_event("shutdown")
 async def shutdown_event():
