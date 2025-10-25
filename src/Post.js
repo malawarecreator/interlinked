@@ -47,6 +47,12 @@ export default function Post({ post, onLike, liking = false, liked = false, comm
   // local comments state so we can show results immediately even if parent hasn't updated props yet
   const [localComments, setLocalComments] = useState(comments || []);
 
+  // AI summary UI
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const [summaryText, setSummaryText] = useState('');
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState('');
+
   // keep localComments in sync when parent updates the comments prop
   useEffect(() => {
     setLocalComments(comments || []);
@@ -172,6 +178,33 @@ export default function Post({ post, onLike, liking = false, liked = false, comm
           >
             {showComments ? `Hide comments (${localComments.length})` : `Comments (${localComments.length})`}
           </button>
+
+          <button
+            onClick={async () => {
+              setSummaryError('');
+              setSummaryText('');
+              setSummaryOpen(true);
+              setSummaryLoading(true);
+              try {
+                const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:8000/api';
+                const res = await fetch(`${API_BASE}/getAISummary?id=${encodeURIComponent(id)}`, { method: 'POST' });
+                if (!res.ok) {
+                  const text = await res.text();
+                  throw new Error(`${res.status} ${res.statusText}: ${text}`);
+                }
+                const data = await res.json();
+                setSummaryText(data.summary ?? data?.summary ?? JSON.stringify(data));
+              } catch (err) {
+                console.error('Failed to fetch AI summary', err);
+                setSummaryError(err?.message || String(err));
+              } finally {
+                setSummaryLoading(false);
+              }
+            }}
+            style={{ background: '#8b5cf6', color: '#fff', border: 'none', padding: '6px 8px', borderRadius: 4, cursor: 'pointer' }}
+          >
+            AI Summary
+          </button>
         </div>
       </div>
 
@@ -258,6 +291,27 @@ export default function Post({ post, onLike, liking = false, liked = false, comm
                 </div>
               ))
             )}
+          </div>
+        </div>
+      )}
+      {/* Summary modal */}
+      {summaryOpen && (
+        <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)' }} onClick={() => { if (!summaryLoading) setSummaryOpen(false); }} />
+          <div style={{ background: 'white', padding: 20, borderRadius: 8, width: 'min(720px, 95%)', boxShadow: '0 8px 32px rgba(0,0,0,0.2)', zIndex: 1001 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <h3 style={{ margin: 0 }}>AI Summary</h3>
+              <button onClick={() => { if (!summaryLoading) setSummaryOpen(false); }} style={{ background: 'transparent', border: 'none', fontSize: 18, cursor: 'pointer' }}>✕</button>
+            </div>
+            <div style={{ minHeight: 80 }}>
+              {summaryLoading ? (
+                <div style={{ color: '#6b7280' }}>Generating summary…</div>
+              ) : summaryError ? (
+                <div style={{ color: '#ef4444' }}>Error: {summaryError}</div>
+              ) : (
+                <div style={{ color: '#374151', lineHeight: 1.5 }}>{summaryText || 'No summary returned.'}</div>
+              )}
+            </div>
           </div>
         </div>
       )}
